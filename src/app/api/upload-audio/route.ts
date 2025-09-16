@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 
 import { jsonResponse } from "@/lib/http";
 import {
+  RateLimitExceededError,
   assertBlobConfigured,
   createJob,
   getPlaybackUrl,
@@ -39,10 +40,18 @@ export async function POST(req: Request) {
   const ip = getClientIp(req);
   try {
     await trackJobForIp(ip);
-  } catch {
+  } catch (error) {
+    if (error instanceof RateLimitExceededError) {
+      return jsonResponse(
+        { success: false, error: "Daily limit reached. Try again tomorrow." },
+        { status: 429 },
+      );
+    }
+
+    console.error("KV rate limit error", error);
     return jsonResponse(
-      { success: false, error: "Daily limit reached. Try again tomorrow." },
-      { status: 429 },
+      { success: false, error: "We couldn't verify the rate limit. Try again shortly." },
+      { status: 500 },
     );
   }
 

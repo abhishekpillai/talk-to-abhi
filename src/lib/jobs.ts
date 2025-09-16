@@ -9,6 +9,17 @@ const JOB_TTL_SECONDS = 60 * 60 * 72; // 72 hours
 const RATE_LIMIT_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 const DAILY_JOB_CAP = 10;
 
+function isKvConfigured() {
+  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+}
+
+export class RateLimitExceededError extends Error {
+  constructor(message = "Daily limit reached") {
+    super(message);
+    this.name = "RateLimitExceededError";
+  }
+}
+
 export function jobKey(id: string) {
   return `${JOB_PREFIX}:${id}`;
 }
@@ -90,6 +101,7 @@ function rateLimitKey(ip: string) {
 
 export async function trackJobForIp(ip: string) {
   if (!ip || ip === "unknown") return;
+  if (!isKvConfigured()) return;
 
   const key = rateLimitKey(ip);
   const count = await kv.incr(key);
@@ -97,7 +109,7 @@ export async function trackJobForIp(ip: string) {
     await kv.expire(key, RATE_LIMIT_TTL_SECONDS);
   }
   if (count > DAILY_JOB_CAP) {
-    throw new Error("Daily limit reached");
+    throw new RateLimitExceededError();
   }
 }
 
