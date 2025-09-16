@@ -11,20 +11,32 @@ if (!ffmpegPath) {
 
 async function runFfmpeg(args: string[]) {
   return new Promise<void>((resolve, reject) => {
+    console.log(`Running ffmpeg with args: ${args.join(' ')}`);
     const ffmpeg = spawn(ffmpegPath!, args);
 
     const stderr: Buffer[] = [];
+    const stdout: Buffer[] = [];
+
     ffmpeg.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
+    ffmpeg.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
 
     ffmpeg.on("error", (error) => {
+      console.error(`ffmpeg spawn error:`, error);
       reject(error);
     });
 
     ffmpeg.on("close", (code) => {
+      const stderrOutput = Buffer.concat(stderr).toString();
+      const stdoutOutput = Buffer.concat(stdout).toString();
+
+      console.log(`ffmpeg exited with code ${code}`);
+      if (stderrOutput) console.log(`ffmpeg stderr: ${stderrOutput}`);
+      if (stdoutOutput) console.log(`ffmpeg stdout: ${stdoutOutput}`);
+
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`ffmpeg exited with code ${code}: ${Buffer.concat(stderr).toString()}`));
+        reject(new Error(`ffmpeg exited with code ${code}: ${stderrOutput}`));
       }
     });
   });
@@ -59,21 +71,36 @@ export async function normalizeAudioToMonoWav(buffer: Buffer) {
   const inputPath = await writeTempFile("audio-in", "tmp", buffer);
   const outputPath = inputPath.replace(/\.tmp$/, ".wav");
 
-  await runFfmpeg([
-    "-y",
-    "-i",
-    inputPath,
-    "-ac",
-    "1",
-    "-ar",
-    "16000",
-    "-c:a",
-    "pcm_s16le",
-    outputPath,
-  ]);
+  try {
+    await runFfmpeg([
+      "-y",
+      "-i",
+      inputPath,
+      "-t",
+      "15", // Limit to 15 seconds
+      "-ac",
+      "1",
+      "-ar",
+      "16000",
+      "-c:a",
+      "pcm_s16le",
+      outputPath,
+    ]);
 
-  const normalized = await readAndCleanup([inputPath, outputPath]);
-  return normalized;
+    const normalized = await readAndCleanup([inputPath, outputPath]);
+    return normalized;
+  } catch (error) {
+    // Clean up temp files on error
+    try {
+      await fs.unlink(inputPath);
+      await fs.unlink(outputPath);
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    console.error(`Audio normalization failed:`, error);
+    throw new Error(`Audio normalization failed: ${(error as Error).message}`);
+  }
 }
 
 export interface WatermarkOptions {

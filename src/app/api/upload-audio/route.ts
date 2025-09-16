@@ -110,7 +110,8 @@ export async function POST(req: Request) {
 
   try {
     normalizedBuffer = await normalizeAudioToMonoWav(audioBuffer);
-  } catch {
+  } catch (error) {
+    console.error(`Audio normalization error for job ${jobId}:`, error);
     return jsonResponse(
       {
         success: false,
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
 
   try {
     const uploadResult = await put(`audios/${jobId}.wav`, normalizedBuffer, {
-      access: "private",
+      access: "public",
       contentType: "audio/wav",
       token: requireEnv("BLOB_READ_WRITE_TOKEN"),
     });
