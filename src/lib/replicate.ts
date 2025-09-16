@@ -36,7 +36,6 @@ export async function createPrediction(options: CreatePredictionOptions) {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      Prefer: "wait=false",
     },
     body: JSON.stringify({
       model,
