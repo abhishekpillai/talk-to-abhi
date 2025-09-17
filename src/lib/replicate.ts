@@ -24,12 +24,29 @@ export interface CreatePredictionOptions {
     temperature: number;
     active_speaker: boolean;
   };
-  webhookUrl: string;
+  webhookUrl?: string;
 }
 
 export async function createPrediction(options: CreatePredictionOptions) {
   const token = requireEnv("REPLICATE_API_TOKEN");
-  const model = env.REPLICATE_MODEL ?? "replicate/lipsync-2-pro";
+  const version = env.REPLICATE_MODEL ?? "sync/lipsync-2";
+
+  const requestBody: any = {
+    version,
+    input: {
+      video: options.videoUrl,
+      audio: options.audioUrl,
+      sync_mode: options.params.sync_mode,
+      temperature: options.params.temperature,
+      active_speaker: options.params.active_speaker,
+    },
+  };
+
+  // Only include webhook fields if webhook URL is provided
+  if (options.webhookUrl) {
+    requestBody.webhook = options.webhookUrl;
+    requestBody.webhook_events_filter = ["completed"];
+  }
 
   const response = await fetch(`${REPLICATE_API_BASE}/predictions`, {
     method: "POST",
@@ -37,18 +54,7 @@ export async function createPrediction(options: CreatePredictionOptions) {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      input: {
-        video: options.videoUrl,
-        audio: options.audioUrl,
-        sync_mode: options.params.sync_mode,
-        temperature: options.params.temperature,
-        active_speaker: options.params.active_speaker,
-      },
-      webhook: options.webhookUrl,
-      webhook_events_filter: ["completed", "failed"],
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

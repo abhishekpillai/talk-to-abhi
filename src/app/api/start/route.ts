@@ -58,7 +58,10 @@ export async function POST(req: Request) {
       token: requireEnv("BLOB_READ_WRITE_TOKEN"),
     });
 
-    const webhookUrl = `${getBaseUrl()}/api/replicate-webhook?jobId=${jobId}`;
+    const baseUrl = getBaseUrl();
+    const webhookUrl = baseUrl.startsWith('http://localhost')
+      ? undefined // Skip webhook in local development
+      : `${baseUrl}/api/replicate-webhook?jobId=${jobId}`;
 
     const prediction = await createPrediction({
       jobId,
