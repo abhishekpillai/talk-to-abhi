@@ -186,6 +186,7 @@ export default function HomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState("Record your voice to get started");
   const [processingMessageIndex, setProcessingMessageIndex] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const canSubmit = consent && !!selectedFile && !isSubmitting;
   const hasRecording = !!selectedFile;
@@ -287,6 +288,32 @@ export default function HomePage() {
     }
   }, [consent, declaredDuration, selectedFile]);
 
+  const handleSync = useCallback(async () => {
+    if (!job?.id || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const response = await fetch(`/api/sync/${job.id}`, {
+        method: "POST",
+      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        setJob(prev => prev ? {
+          ...prev,
+          status: result.data.status,
+          output: result.data.renderBlobUrl ? {
+            renderBlobUrl: result.data.renderBlobUrl,
+            publicPlaybackUrl: `/v/${job.id}`
+          } : prev.output,
+          error: result.data.error || null
+        } : null);
+      }
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [job?.id, isSyncing]);
+
   const statusTone = useMemo(() => {
     if (!job) return "text-white/80";
     if (job.status === "failed") return "text-red-400";
@@ -340,16 +367,29 @@ export default function HomePage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-white/90 text-center">Your Creation</h3>
               <div className="rounded-2xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 border border-emerald-400/20 overflow-hidden shadow-2xl" style={{height: "400px"}}>
-                {job?.status === "completed" && job.output?.publicPlaybackUrl ? (
+                {job?.status === "completed" && job.output?.renderBlobUrl ? (
                   <video
                     controls
                     className="w-full h-full object-cover"
-                    src={job.output.publicPlaybackUrl}
+                    src={job.output.renderBlobUrl}
                   />
                 ) : job?.status === "processing" ? (
                   <div className="text-center text-emerald-300 animate-pulse h-full flex flex-col items-center justify-center">
                     <div className="text-6xl mb-4">⚡</div>
                     <p className="text-lg font-medium">{PROCESSING_MESSAGES[processingMessageIndex]}</p>
+                    <button
+                      onClick={handleSync}
+                      disabled={isSyncing}
+                      className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm rounded-lg transition-all"
+                    >
+                      {isSyncing ? "Syncing..." : "Check Status"}
+                    </button>
+                  </div>
+                ) : job?.status === "failed" ? (
+                  <div className="text-center text-red-300 h-full flex flex-col items-center justify-center">
+                    <div className="text-6xl mb-4">❌</div>
+                    <p className="text-lg font-medium">Something went wrong</p>
+                    <p className="text-sm text-red-400 mt-2">{job.error || "Processing failed"}</p>
                   </div>
                 ) : (
                   <div className="text-center text-white/60 h-full flex flex-col items-center justify-center">
@@ -363,7 +403,7 @@ export default function HomePage() {
           </div>
 
           {/* Completion Actions */}
-          {job?.status === "completed" && job.output?.publicPlaybackUrl && (
+          {job?.status === "completed" && job.output?.renderBlobUrl && (
             <div className="mt-8 text-center space-y-6 max-w-4xl mx-auto">
               <h3 className="text-2xl font-bold text-emerald-300">🎉 Your Abhi clip is ready!</h3>
               <div className="flex flex-wrap justify-center gap-4">
