@@ -17,6 +17,14 @@ interface StatusPayload {
 
 const MAX_AUDIO_SECONDS = 15;
 
+const PROCESSING_MESSAGES = [
+  "🎭 Teaching Abhi your words...",
+  "🎯 Syncing those lips perfectly...",
+  "✨ Adding some AI magic...",
+  "🚀 Almost there...",
+  "🎬 Putting the finishing touches..."
+];
+
 function classNames(...classes: (string | false | null | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
@@ -37,11 +45,10 @@ function formatStatusCopy(status: StatusPayload["status"]) {
 }
 
 interface RecorderProps {
-  disabled: boolean;
   onAudioReady: (file: File, duration: number) => void;
 }
 
-function Recorder({ disabled, onAudioReady }: RecorderProps) {
+function Recorder({ onAudioReady }: RecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -134,32 +141,38 @@ function Recorder({ disabled, onAudioReady }: RecorderProps) {
   }, [isRecording, startRecording, finalizeRecording]);
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-4">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-white/80">Inline Recorder</p>
-          <p className="text-xs text-white/60">
-            Tap record and speak up to {MAX_AUDIO_SECONDS} seconds. We&apos;ll auto-stop the mic.
-          </p>
-        </div>
+    <div className="flex flex-col gap-4 rounded-3xl border-2 border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 p-6 backdrop-blur">
+      <div className="text-center">
+        <h3 className="text-xl font-bold text-white mb-2">Record Your Voice</h3>
+        <p className="text-sm text-white/70">
+          Speak for up to {MAX_AUDIO_SECONDS} seconds - I&apos;ll lip-sync to your words! 🎭
+        </p>
+      </div>
+      <div className="flex flex-col items-center gap-4">
         <button
           type="button"
           onClick={handleToggle}
-          disabled={disabled}
           className={classNames(
-            "rounded-full px-4 py-2 text-sm font-semibold transition-all",
+            "rounded-full px-6 py-3 text-lg font-bold transition-all transform hover:scale-105",
             isRecording
-              ? "bg-red-500 text-white hover:bg-red-400"
-              : "bg-white/20 text-white hover:bg-white/30",
-            disabled && "cursor-not-allowed opacity-50",
+              ? "bg-red-500 text-white hover:bg-red-400 shadow-lg shadow-red-500/25"
+              : "bg-emerald-500 text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/25",
           )}
         >
-          {isRecording ? "Stop" : "Record"}
+          {isRecording ? "🛑 Stop Recording" : "🎤 Start Recording"}
         </button>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-white/70">
-        <span className={classNames("inline-block h-2 w-2 rounded-full", isRecording ? "bg-red-500" : "bg-white/40")} />
-        {isRecording ? `${elapsed}s recording…` : "Mic idle"}
+        <div className="flex items-center gap-3 text-sm font-medium">
+          <span className={classNames(
+            "inline-block h-3 w-3 rounded-full transition-all",
+            isRecording ? "bg-red-500 animate-pulse" : "bg-emerald-400"
+          )} />
+          <span className={classNames(
+            "transition-colors",
+            isRecording ? "text-red-300" : "text-emerald-300"
+          )}>
+            {isRecording ? `Recording... ${elapsed}s` : "Ready to record"}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -172,29 +185,19 @@ export default function HomePage() {
   const [job, setJob] = useState<StatusPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Upload your audio to get started");
+  const [statusMessage, setStatusMessage] = useState("Record your voice to get started");
+  const [processingMessageIndex, setProcessingMessageIndex] = useState(0);
 
   const canSubmit = consent && !!selectedFile && !isSubmitting;
+  const hasRecording = !!selectedFile;
 
   const handleRecorderAudio = useCallback((file: File, duration: number) => {
     setSelectedFile(file);
     setDeclaredDuration(duration);
     setError(null);
-    setStatusMessage(`Captured ${Math.min(duration, MAX_AUDIO_SECONDS)}s from your mic.`);
+    setStatusMessage(`🎉 Captured ${Math.min(duration, MAX_AUDIO_SECONDS)}s of audio! Check the box below and let's make magic happen.`);
   }, []);
 
-  const handleFileInput = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Audio must be ≤ 5MB.");
-      return;
-    }
-    setSelectedFile(file);
-    setDeclaredDuration(null);
-    setError(null);
-    setStatusMessage(`Loaded ${file.name}`);
-  }, []);
 
   useEffect(() => {
     if (!job?.id) return;
@@ -217,11 +220,24 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!job) return;
-    setStatusMessage(formatStatusCopy(job.status));
-    if (job.status === "failed" && job.error) {
-      setError(job.error);
+    if (job.status === "processing") {
+      const interval = setInterval(() => {
+        setProcessingMessageIndex((prev) => (prev + 1) % PROCESSING_MESSAGES.length);
+      }, 3000);
+      return () => clearInterval(interval);
+    } else {
+      setStatusMessage(formatStatusCopy(job.status));
+      if (job.status === "failed" && job.error) {
+        setError(job.error);
+      }
     }
   }, [job]);
+
+  useEffect(() => {
+    if (job?.status === "processing") {
+      setStatusMessage(PROCESSING_MESSAGES[processingMessageIndex]);
+    }
+  }, [job?.status, processingMessageIndex]);
 
   const handleSubmit = useCallback(async () => {
     if (!selectedFile || !consent) return;
@@ -280,144 +296,179 @@ export default function HomePage() {
   }, [job]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-4 py-12 sm:px-8">
-      <header className="flex flex-col gap-4 text-left">
-        <div className="inline-flex w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white/80">
-          Consensual parody lab
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-8">
+      <header className="flex flex-col gap-4 text-center">
+        <div className="mx-auto inline-flex w-fit rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-bold uppercase tracking-widest text-emerald-300">
+          🎭 Consensual AI Fun
         </div>
-        <h1 className="text-balance text-4xl font-semibold text-white sm:text-5xl">
+        <h1 className="text-balance text-5xl font-bold text-white sm:text-6xl">
           Talk as Abhi
         </h1>
-        <p className="max-w-2xl text-lg text-white/70">
-          Upload or record a short audio clip and watch Abhi lip-sync it using Replicate’s lipsync-2-pro. Fun, viral, and 100% consensual.
+        <p className="mx-auto max-w-2xl text-xl text-white/80">
+          Record yourself saying anything and watch me lip-sync it! 100% consensual parody magic ✨
         </p>
-        <div className="rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white/70">
-          <p>
-            Abhi consented to this demo. Only upload audio you have the right to use. No hate speech, illegal content, or harassment. Clips auto-delete within 72 hours.
-          </p>
-        </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[2fr_3fr]">
-        <div className="flex flex-col gap-4">
-          <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 p-6 text-center transition hover:border-white/40">
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleFileInput}
-              className="hidden"
-            />
-            <span className="text-lg font-semibold text-white">Upload audio</span>
-            <span className="text-xs text-white/60">MP3, WAV, M4A · up to {MAX_AUDIO_SECONDS}s / 5MB</span>
-          </label>
+      <section className="grid gap-8 lg:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <Recorder onAudioReady={handleRecorderAudio} />
 
-          <Recorder disabled={!consent || isSubmitting} onAudioReady={handleRecorderAudio} />
+          {hasRecording && (
+            <>
+              <label className="flex items-start gap-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4 text-white/90">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(event) => setConsent(event.target.checked)}
+                  className="mt-1 h-5 w-5 rounded border-emerald-400/50 bg-transparent accent-emerald-400"
+                />
+                <span className="text-sm font-medium">
+                  ✅ I understand this is parody and I'll keep it respectful
+                </span>
+              </label>
 
-          <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(event) => setConsent(event.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-white/30 bg-transparent"
-            />
-            <span>
-              I understand this is parody, I have consent to use the likeness/audio, and I agree to keep it respectful.
-            </span>
-          </label>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!canSubmit}
+                className={classNames(
+                  "w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-blue-500 px-8 py-4 text-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg",
+                  !canSubmit && "cursor-not-allowed opacity-50 transform-none",
+                )}
+              >
+                {isSubmitting ? "🚀 Creating Magic..." : "🎬 Generate My Abhi Clip!"}
+              </button>
+            </>
+          )}
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className={classNames(
-              "w-full rounded-2xl bg-emerald-400 px-6 py-4 text-center text-base font-semibold text-emerald-950 transition",
-              !canSubmit && "cursor-not-allowed opacity-50",
-            )}
-          >
-            {isSubmitting ? "Uploading…" : "Generate my Abhi clip"}
-          </button>
+          {error && (
+            <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-4">
+              <p className="text-red-300 font-medium">❌ {error}</p>
+            </div>
+          )}
 
-          {error ? (
-            <p className="text-sm text-red-400">{error}</p>
-          ) : (
-            <p className={classNames("text-sm", statusTone)}>{statusMessage}</p>
+          {statusMessage && !error && (
+            <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
+              <p className={classNames("font-medium", statusTone)}>{statusMessage}</p>
+            </div>
           )}
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="rounded-3xl border border-white/10 bg-black/20 p-6 backdrop-blur">
-            <h2 className="text-lg font-semibold text-white">Status</h2>
-            <ol className="mt-4 space-y-3 text-sm text-white/70">
-              <li className={classNames(job ? "text-white" : "text-white/50")}>Upload audio</li>
-              <li className={classNames(job?.status === "processing" ? "text-white" : "text-white/50")}>Generate with Replicate</li>
-              <li className={classNames(job?.status === "completed" ? "text-white" : "text-white/50")}>Watch & share</li>
-            </ol>
-            {job?.status === "failed" && job.error ? (
-              <p className="mt-4 rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-200">
-                {job.error}
-              </p>
-            ) : null}
-            {job?.status === "completed" && job.output?.publicPlaybackUrl ? (
-              <div className="mt-6 space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-                <p className="font-semibold">Clip ready</p>
-                <a
-                  href={job.output.publicPlaybackUrl}
-                  className="inline-flex items-center gap-2 text-emerald-300 hover:text-emerald-200"
-                >
-                  View playback →
-                </a>
-                <div className="flex flex-wrap gap-2">
+          <div className="rounded-3xl border-2 border-white/10 bg-black/30 p-6 backdrop-blur">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">🎬 Video Preview</h2>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-white/80 text-center">Original Abhi</h3>
+                <div className="aspect-video rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/10">
+                  <div className="text-center text-white/60">
+                    <div className="text-4xl mb-2">🎭</div>
+                    <p className="text-sm">Template Video</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-white/80 text-center">Your Creation</h3>
+                <div className="aspect-video rounded-xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 flex items-center justify-center border border-emerald-400/20">
+                  {job?.status === "completed" && job.output?.publicPlaybackUrl ? (
+                    <div className="w-full h-full">
+                      <video
+                        controls
+                        className="w-full h-full rounded-xl"
+                        src={job.output.publicPlaybackUrl}
+                      />
+                    </div>
+                  ) : job?.status === "processing" ? (
+                    <div className="text-center text-emerald-300 animate-pulse">
+                      <div className="text-4xl mb-2">⚡</div>
+                      <p className="text-sm font-medium">Processing...</p>
+                    </div>
+                  ) : (
+                    <div className="text-center text-white/60">
+                      <div className="text-4xl mb-2">🎬</div>
+                      <p className="text-sm">Your video will appear here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {job?.status === "completed" && job.output?.publicPlaybackUrl && (
+              <div className="mt-6 space-y-4 text-center">
+                <h3 className="text-lg font-bold text-emerald-300">🎉 Your Abhi clip is ready!</h3>
+                <div className="flex flex-wrap justify-center gap-3">
                   <button
                     type="button"
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/70 hover:border-white/40"
+                    className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-medium text-white transition-all"
                     onClick={() => {
                       navigator.clipboard.writeText(job.output!.publicPlaybackUrl!);
                     }}
                   >
-                    Copy link
+                    📋 Copy Link
                   </button>
                   <a
                     href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                      "I just made Abhi talk with my own audio — try it at TalkAsAbhi.com",
+                      "I just made Abhi say my words using AI! 🤖✨ Try it yourself at TalkAsAbhi.com",
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/70 hover:border-white/40"
+                    className="rounded-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 px-4 py-2 text-sm font-medium text-blue-300 transition-all"
                   >
-                    Share on X
+                    🐦 Share on X
                   </a>
                   <a
                     href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                      job.output.publicPlaybackUrl,
+                      `Check out this AI magic: ${job.output.publicPlaybackUrl}`,
                     )}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/70 hover:border-white/40"
+                    className="rounded-full bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 px-4 py-2 text-sm font-medium text-green-300 transition-all"
                   >
-                    Send on WhatsApp
+                    💬 Send on WhatsApp
                   </a>
                 </div>
-                <p className="text-xs text-white/50">Clips auto-delete in 72 hours.</p>
+                <p className="text-xs text-white/50">⏰ Clips auto-delete in 72 hours for privacy</p>
               </div>
-            ) : null}
+            )}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-black/20 p-6 text-sm text-white/70">
-            <h2 className="text-base font-semibold text-white">How it works</h2>
-            <ul className="mt-3 space-y-2 list-disc pl-5">
-              <li>We normalize your audio to mono WAV and upload it securely to Vercel Blob.</li>
-              <li>Replicate’s lipsync-2-pro creates the talking-head video with Abhi’s consented template.</li>
-              <li>We watermark the output (AI-generated · Consensual Parody · TalkAsAbhi.com) before sharing.</li>
-            </ul>
-          </div>
+          {(job?.status === "processing" || hasRecording) && (
+            <div className="rounded-3xl border border-blue-400/20 bg-blue-400/5 p-6 backdrop-blur">
+              <h2 className="text-lg font-bold text-white mb-4 text-center">✨ How the Magic Works</h2>
+              <div className="space-y-3 text-sm text-white/80">
+                <div className="flex items-center gap-3">
+                  <span className="text-emerald-400 text-xl">🎤</span>
+                  <span>We capture your voice and clean it up for AI processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-400 text-xl">🤖</span>
+                  <span>Replicate's AI analyzes your speech patterns</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-purple-400 text-xl">🎭</span>
+                  <span>The AI maps your words to Abhi's facial movements</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-yellow-400 text-xl">🎬</span>
+                  <span>Final video gets a watermark and is ready to share!</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      <footer className="mt-auto flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
-        <span>© {new Date().getFullYear()} Talk as Abhi. Built for fun, shipped with care.</span>
-        <span>
-          Need a takedown? Email <a className="underline" href="mailto:hello@talkasabhi.com">hello@talkasabhi.com</a>
-        </span>
+      <footer className="mt-12 border-t border-white/10 pt-8 pb-4">
+        <div className="text-center space-y-2">
+          <p className="text-sm text-white/60">
+            © {new Date().getFullYear()} Talk as Abhi • Built with ❤️ for consensual AI fun
+          </p>
+          <p className="text-xs text-white/40">
+            Questions? Email <a className="underline hover:text-white/60 transition-colors" href="mailto:hello@talkasabhi.com">hello@talkasabhi.com</a>
+          </p>
+        </div>
       </footer>
     </main>
   );

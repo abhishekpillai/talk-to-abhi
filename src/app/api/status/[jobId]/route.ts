@@ -3,8 +3,9 @@ import { getJob } from "@/lib/jobs";
 
 export const runtime = "nodejs";
 
-export async function GET(_req: Request, { params }: { params: { jobId: string } }) {
-  const job = await getJob(params.jobId);
+export async function GET(_req: Request, { params }: { params: Promise<{ jobId: string }> }) {
+  const { jobId } = await params;
+  const job = await getJob(jobId);
   if (!job) {
     return jsonResponse({ success: false, error: "Job not found" }, { status: 404 });
   }
