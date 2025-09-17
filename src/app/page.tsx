@@ -361,11 +361,19 @@ export default function HomePage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-white/80 text-center">Original Abhi</h3>
-                <div className="aspect-video rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/10">
-                  <div className="text-center text-white/60">
-                    <div className="text-4xl mb-2">🎭</div>
-                    <p className="text-sm">Template Video</p>
-                  </div>
+                <div className="aspect-video rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/10 overflow-hidden">
+                  <video
+                    controls
+                    muted
+                    preload="metadata"
+                    className="w-full h-full rounded-xl object-cover"
+                    src="https://y2gvxtii819fey1g.public.blob.vercel-storage.com/templates/abhi-v1.mp4"
+                  >
+                    <div className="text-center text-white/60">
+                      <div className="text-4xl mb-2">🎭</div>
+                      <p className="text-sm">Template Video</p>
+                    </div>
+                  </video>
                 </div>
               </div>
 
@@ -461,13 +469,28 @@ export default function HomePage() {
       </section>
 
       <footer className="mt-12 border-t border-white/10 pt-8 pb-4">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
           <p className="text-sm text-white/60">
             © {new Date().getFullYear()} Talk as Abhi • Built with ❤️ for consensual AI fun
           </p>
-          <p className="text-xs text-white/40">
-            Questions? Email <a className="underline hover:text-white/60 transition-colors" href="mailto:hello@talkasabhi.com">hello@talkasabhi.com</a>
-          </p>
+          <div className="flex justify-center gap-6 text-xs">
+            <a
+              href="https://x.com/abhiondemand"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/40 hover:text-blue-400 transition-colors flex items-center gap-1"
+            >
+              <span>🐦</span> Follow on X
+            </a>
+            <a
+              href="https://linkedin.com/in/abhipillai1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white/40 hover:text-blue-600 transition-colors flex items-center gap-1"
+            >
+              <span>💼</span> Connect on LinkedIn
+            </a>
+          </div>
         </div>
       </footer>
     </main>
