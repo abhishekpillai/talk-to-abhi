@@ -7,7 +7,6 @@ import {
   getJob,
   setJobStatus,
 } from "@/lib/jobs";
-import { requireEnv } from "@/lib/env";
 import { createPrediction } from "@/lib/replicate";
 import { getBaseUrl } from "@/lib/url";
 
@@ -50,13 +49,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const audioUrl = await getDownloadUrl(job.input.audioBlobUrl, {
-      token: requireEnv("BLOB_READ_WRITE_TOKEN"),
-    });
+    const audioUrl = await getDownloadUrl(job.input.audioBlobUrl);
 
-    const templateUrl = await getDownloadUrl(job.input.templateBlobUrl, {
-      token: requireEnv("BLOB_READ_WRITE_TOKEN"),
-    });
+    const templateUrl = await getDownloadUrl(job.input.templateBlobUrl);
 
     const baseUrl = getBaseUrl();
     const webhookUrl = baseUrl.startsWith('http://localhost')

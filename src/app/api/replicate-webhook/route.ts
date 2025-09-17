@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         text: "AI-generated · Consensual Parody · TalkAsAbhi.com",
       });
       const renderBlob = await put(`renders/${jobId}.mp4`, stamped, {
-        access: "private",
+        access: "public",
         contentType: "video/mp4",
         token: requireEnv("BLOB_READ_WRITE_TOKEN"),
       });

@@ -3,7 +3,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CopyButton } from "@/components/copy-button";
-import { requireEnv } from "@/lib/env";
 import { getJob } from "@/lib/jobs";
 import { getBaseUrl } from "@/lib/url";
 
@@ -55,9 +54,7 @@ export default async function PlaybackPage({ params }: PlaybackPageProps) {
     );
   }
 
-  const downloadUrl = await getDownloadUrl(job.output.renderBlobUrl, {
-    token: requireEnv("BLOB_READ_WRITE_TOKEN"),
-  });
+  const downloadUrl = await getDownloadUrl(job.output.renderBlobUrl);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-4 py-12 text-white">

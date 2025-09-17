@@ -27,11 +27,24 @@ export interface CreatePredictionOptions {
   webhookUrl?: string;
 }
 
+interface ReplicateRequestBody {
+  version: string;
+  input: {
+    video: string;
+    audio: string;
+    sync_mode: "loop" | "default";
+    temperature: number;
+    active_speaker: boolean;
+  };
+  webhook?: string;
+  webhook_events_filter?: string[];
+}
+
 export async function createPrediction(options: CreatePredictionOptions) {
   const token = requireEnv("REPLICATE_API_TOKEN");
   const version = env.REPLICATE_MODEL ?? "sync/lipsync-2";
 
-  const requestBody: any = {
+  const requestBody: ReplicateRequestBody = {
     version,
     input: {
       video: options.videoUrl,

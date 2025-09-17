@@ -309,13 +309,107 @@ export default function HomePage() {
         </p>
       </header>
 
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-12">
+        {/* Prominent Video Section */}
+        <div className="w-full">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-white mb-2">🎬 Watch the Magic Happen</h2>
+            <p className="text-white/70">See the original Abhi and watch your creation come to life</p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 max-w-6xl mx-auto">
+            {/* Original Abhi Video */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white/90 text-center">Original Abhi</h3>
+              <div className="rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 overflow-hidden shadow-2xl" style={{height: "400px"}}>
+                <video
+                  controls
+                  muted
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                  src="https://y2gvxtii819fey1g.public.blob.vercel-storage.com/templates/abhi-v1.mp4"
+                >
+                  <div className="text-center text-white/60 h-full flex flex-col items-center justify-center">
+                    <div className="text-6xl mb-4">🎭</div>
+                    <p className="text-lg">Template Video</p>
+                  </div>
+                </video>
+              </div>
+            </div>
+
+            {/* Generated Video */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white/90 text-center">Your Creation</h3>
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 border border-emerald-400/20 overflow-hidden shadow-2xl" style={{height: "400px"}}>
+                {job?.status === "completed" && job.output?.publicPlaybackUrl ? (
+                  <video
+                    controls
+                    className="w-full h-full object-cover"
+                    src={job.output.publicPlaybackUrl}
+                  />
+                ) : job?.status === "processing" ? (
+                  <div className="text-center text-emerald-300 animate-pulse h-full flex flex-col items-center justify-center">
+                    <div className="text-6xl mb-4">⚡</div>
+                    <p className="text-lg font-medium">{PROCESSING_MESSAGES[processingMessageIndex]}</p>
+                  </div>
+                ) : (
+                  <div className="text-center text-white/60 h-full flex flex-col items-center justify-center">
+                    <div className="text-6xl mb-4">🎬</div>
+                    <p className="text-lg">Your video will appear here</p>
+                    <p className="text-sm text-white/40 mt-2">Record your voice below to get started</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Completion Actions */}
+          {job?.status === "completed" && job.output?.publicPlaybackUrl && (
+            <div className="mt-8 text-center space-y-6 max-w-4xl mx-auto">
+              <h3 className="text-2xl font-bold text-emerald-300">🎉 Your Abhi clip is ready!</h3>
+              <div className="flex flex-wrap justify-center gap-4">
+                <button
+                  type="button"
+                  className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3 text-sm font-medium text-white transition-all transform hover:scale-105"
+                  onClick={() => {
+                    navigator.clipboard.writeText(job.output!.publicPlaybackUrl!);
+                  }}
+                >
+                  📋 Copy Link
+                </button>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                    "I just made Abhi say my words using AI! 🤖✨ Try it yourself at TalkAsAbhi.com",
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 px-6 py-3 text-sm font-medium text-blue-300 transition-all transform hover:scale-105"
+                >
+                  🐦 Share on X
+                </a>
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    `Check out this AI magic: ${job.output.publicPlaybackUrl}`,
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 px-6 py-3 text-sm font-medium text-green-300 transition-all transform hover:scale-105"
+                >
+                  💬 Send on WhatsApp
+                </a>
+              </div>
+              <p className="text-sm text-white/50">⏰ Clips auto-delete in 72 hours for privacy</p>
+            </div>
+          )}
+        </div>
+
+        {/* Recording Section */}
+        <div className="max-w-3xl mx-auto w-full">
           <Recorder onAudioReady={handleRecorderAudio} />
 
           {hasRecording && (
-            <>
-              <label className="flex items-start gap-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4 text-white/90">
+            <div className="mt-6 space-y-4">
+              <label className="flex items-start gap-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4 text-white/90 max-w-md mx-auto">
                 <input
                   type="checkbox"
                   checked={consent}
@@ -323,7 +417,7 @@ export default function HomePage() {
                   className="mt-1 h-5 w-5 rounded border-emerald-400/50 bg-transparent accent-emerald-400"
                 />
                 <span className="text-sm font-medium">
-                  ✅ I understand this is parody and I'll keep it respectful
+                  ✅ I understand this is parody and I&apos;ll keep it respectful
                 </span>
               </label>
 
@@ -332,140 +426,54 @@ export default function HomePage() {
                 onClick={handleSubmit}
                 disabled={!canSubmit}
                 className={classNames(
-                  "w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-blue-500 px-8 py-4 text-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg",
+                  "w-full max-w-md mx-auto block rounded-2xl bg-gradient-to-r from-emerald-500 to-blue-500 px-8 py-4 text-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg",
                   !canSubmit && "cursor-not-allowed opacity-50 transform-none",
                 )}
               >
                 {isSubmitting ? "🚀 Creating Magic..." : "🎬 Generate My Abhi Clip!"}
               </button>
-            </>
+            </div>
           )}
 
           {error && (
-            <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-4">
-              <p className="text-red-300 font-medium">❌ {error}</p>
+            <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-4 mt-6 max-w-md mx-auto">
+              <p className="text-red-300 font-medium text-center">❌ {error}</p>
             </div>
           )}
 
           {statusMessage && !error && (
-            <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
-              <p className={classNames("font-medium", statusTone)}>{statusMessage}</p>
+            <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4 mt-6 max-w-md mx-auto">
+              <p className={classNames("font-medium text-center", statusTone)}>{statusMessage}</p>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-6">
-          <div className="rounded-3xl border-2 border-white/10 bg-black/30 p-6 backdrop-blur">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">🎬 Video Preview</h2>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-white/80 text-center">Original Abhi</h3>
-                <div className="aspect-video rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/10 overflow-hidden">
-                  <video
-                    controls
-                    muted
-                    preload="metadata"
-                    className="w-full h-full rounded-xl object-cover"
-                    src="https://y2gvxtii819fey1g.public.blob.vercel-storage.com/templates/abhi-v1.mp4"
-                  >
-                    <div className="text-center text-white/60">
-                      <div className="text-4xl mb-2">🎭</div>
-                      <p className="text-sm">Template Video</p>
-                    </div>
-                  </video>
+        {/* How it Works - Only during processing or after recording */}
+        {(job?.status === "processing" || hasRecording) && (
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="rounded-3xl border border-blue-400/20 bg-blue-400/5 p-8 backdrop-blur">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">✨ How the Magic Works</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div className="text-center space-y-3">
+                  <span className="text-emerald-400 text-4xl block">🎤</span>
+                  <p className="text-sm text-white/80">We capture your voice and clean it up for AI processing</p>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-white/80 text-center">Your Creation</h3>
-                <div className="aspect-video rounded-xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 flex items-center justify-center border border-emerald-400/20">
-                  {job?.status === "completed" && job.output?.publicPlaybackUrl ? (
-                    <div className="w-full h-full">
-                      <video
-                        controls
-                        className="w-full h-full rounded-xl"
-                        src={job.output.publicPlaybackUrl}
-                      />
-                    </div>
-                  ) : job?.status === "processing" ? (
-                    <div className="text-center text-emerald-300 animate-pulse">
-                      <div className="text-4xl mb-2">⚡</div>
-                      <p className="text-sm font-medium">Processing...</p>
-                    </div>
-                  ) : (
-                    <div className="text-center text-white/60">
-                      <div className="text-4xl mb-2">🎬</div>
-                      <p className="text-sm">Your video will appear here</p>
-                    </div>
-                  )}
+                <div className="text-center space-y-3">
+                  <span className="text-blue-400 text-4xl block">🤖</span>
+                  <p className="text-sm text-white/80">Replicate&apos;s AI analyzes your speech patterns</p>
+                </div>
+                <div className="text-center space-y-3">
+                  <span className="text-purple-400 text-4xl block">🎭</span>
+                  <p className="text-sm text-white/80">The AI maps your words to Abhi&apos;s facial movements</p>
+                </div>
+                <div className="text-center space-y-3">
+                  <span className="text-yellow-400 text-4xl block">🎬</span>
+                  <p className="text-sm text-white/80">Final video gets a watermark and is ready to share!</p>
                 </div>
               </div>
             </div>
-
-            {job?.status === "completed" && job.output?.publicPlaybackUrl && (
-              <div className="mt-6 space-y-4 text-center">
-                <h3 className="text-lg font-bold text-emerald-300">🎉 Your Abhi clip is ready!</h3>
-                <div className="flex flex-wrap justify-center gap-3">
-                  <button
-                    type="button"
-                    className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-medium text-white transition-all"
-                    onClick={() => {
-                      navigator.clipboard.writeText(job.output!.publicPlaybackUrl!);
-                    }}
-                  >
-                    📋 Copy Link
-                  </button>
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                      "I just made Abhi say my words using AI! 🤖✨ Try it yourself at TalkAsAbhi.com",
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 px-4 py-2 text-sm font-medium text-blue-300 transition-all"
-                  >
-                    🐦 Share on X
-                  </a>
-                  <a
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                      `Check out this AI magic: ${job.output.publicPlaybackUrl}`,
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 px-4 py-2 text-sm font-medium text-green-300 transition-all"
-                  >
-                    💬 Send on WhatsApp
-                  </a>
-                </div>
-                <p className="text-xs text-white/50">⏰ Clips auto-delete in 72 hours for privacy</p>
-              </div>
-            )}
           </div>
-
-          {(job?.status === "processing" || hasRecording) && (
-            <div className="rounded-3xl border border-blue-400/20 bg-blue-400/5 p-6 backdrop-blur">
-              <h2 className="text-lg font-bold text-white mb-4 text-center">✨ How the Magic Works</h2>
-              <div className="space-y-3 text-sm text-white/80">
-                <div className="flex items-center gap-3">
-                  <span className="text-emerald-400 text-xl">🎤</span>
-                  <span>We capture your voice and clean it up for AI processing</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-blue-400 text-xl">🤖</span>
-                  <span>Replicate's AI analyzes your speech patterns</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-purple-400 text-xl">🎭</span>
-                  <span>The AI maps your words to Abhi's facial movements</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-yellow-400 text-xl">🎬</span>
-                  <span>Final video gets a watermark and is ready to share!</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </section>
 
       <footer className="mt-12 border-t border-white/10 pt-8 pb-4">
