@@ -134,11 +134,10 @@ function Recorder({ onAudioReady }: RecorderProps) {
       }
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = null;
-      finalizeRecording("manual");
     } else {
       startRecording();
     }
-  }, [isRecording, startRecording, finalizeRecording]);
+  }, [isRecording, startRecording]);
 
   return (
     <div className="flex flex-col gap-4 rounded-3xl border-2 border-emerald-400/20 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 p-6 backdrop-blur">
