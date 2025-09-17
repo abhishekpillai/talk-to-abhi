@@ -338,10 +338,6 @@ export default function HomePage() {
       <section className="flex flex-col gap-12">
         {/* Prominent Video Section */}
         <div className="w-full">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">🎬 Watch the Magic Happen</h2>
-            <p className="text-white/70">See the original Abhi and watch your creation come to life</p>
-          </div>
 
           <div className="grid gap-8 md:grid-cols-2 max-w-6xl mx-auto">
             {/* Original Abhi Video */}
