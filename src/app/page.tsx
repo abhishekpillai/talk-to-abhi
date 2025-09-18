@@ -22,7 +22,7 @@ const PROCESSING_MESSAGES = [
   "🎯 Syncing those lips perfectly...",
   "✨ Adding some AI magic...",
   "🚀 Almost there...",
-  "🎬 Putting the finishing touches..."
+  "🎬 Putting the finishing touches...",
 ];
 
 function classNames(...classes: (string | false | null | undefined)[]) {
@@ -58,7 +58,9 @@ function Recorder({ onAudioReady }: RecorderProps) {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      mediaRecorderRef.current?.stream.getTracks().forEach((track) => track.stop());
+      mediaRecorderRef.current?.stream
+        .getTracks()
+        .forEach((track) => track.stop());
       mediaRecorderRef.current = null;
     };
   }, []);
@@ -83,7 +85,7 @@ function Recorder({ onAudioReady }: RecorderProps) {
         // Provide subtle feedback at the button label. Handled on parent.
       }
     },
-    [elapsed, onAudioReady],
+    [elapsed, onAudioReady]
   );
 
   const startRecording = useCallback(async () => {
@@ -111,7 +113,10 @@ function Recorder({ onAudioReady }: RecorderProps) {
         setElapsed((prev) => {
           const next = prev + 1;
           if (next >= MAX_AUDIO_SECONDS) {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            if (
+              mediaRecorderRef.current &&
+              mediaRecorderRef.current.state !== "inactive"
+            ) {
               mediaRecorderRef.current.stop();
             }
             if (timerRef.current) clearInterval(timerRef.current);
@@ -123,13 +128,18 @@ function Recorder({ onAudioReady }: RecorderProps) {
       }, 1000);
     } catch (error) {
       console.error("microphone error", error);
-      alert("We couldn't access your microphone. Please allow mic access or upload a file instead.");
+      alert(
+        "We couldn't access your microphone. Please allow mic access or upload a file instead."
+      );
     }
   }, [finalizeRecording]);
 
   const handleToggle = useCallback(() => {
     if (isRecording) {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
         mediaRecorderRef.current.stop();
       }
       if (timerRef.current) clearInterval(timerRef.current);
@@ -144,7 +154,8 @@ function Recorder({ onAudioReady }: RecorderProps) {
       <div className="text-center">
         <h3 className="text-xl font-bold text-white mb-2">Record Your Voice</h3>
         <p className="text-sm text-white/70">
-          Speak for up to {MAX_AUDIO_SECONDS} seconds - I&apos;ll lip-sync to your words! 🎭
+          Speak for up to {MAX_AUDIO_SECONDS} seconds - I&apos;ll lip-sync to
+          your words! 🎭
         </p>
       </div>
       <div className="flex flex-col items-center gap-4">
@@ -155,20 +166,24 @@ function Recorder({ onAudioReady }: RecorderProps) {
             "rounded-full px-6 py-3 text-lg font-bold transition-all transform hover:scale-105",
             isRecording
               ? "bg-red-500 text-white hover:bg-red-400 shadow-lg shadow-red-500/25"
-              : "bg-emerald-500 text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/25",
+              : "bg-emerald-500 text-white hover:bg-emerald-400 shadow-lg shadow-emerald-500/25"
           )}
         >
           {isRecording ? "🛑 Stop Recording" : "🎤 Start Recording"}
         </button>
         <div className="flex items-center gap-3 text-sm font-medium">
-          <span className={classNames(
-            "inline-block h-3 w-3 rounded-full transition-all",
-            isRecording ? "bg-red-500 animate-pulse" : "bg-emerald-400"
-          )} />
-          <span className={classNames(
-            "transition-colors",
-            isRecording ? "text-red-300" : "text-emerald-300"
-          )}>
+          <span
+            className={classNames(
+              "inline-block h-3 w-3 rounded-full transition-all",
+              isRecording ? "bg-red-500 animate-pulse" : "bg-emerald-400"
+            )}
+          />
+          <span
+            className={classNames(
+              "transition-colors",
+              isRecording ? "text-red-300" : "text-emerald-300"
+            )}
+          >
             {isRecording ? `Recording... ${elapsed}s` : "Ready to record"}
           </span>
         </div>
@@ -184,7 +199,9 @@ export default function HomePage() {
   const [job, setJob] = useState<StatusPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Record your voice to get started");
+  const [statusMessage, setStatusMessage] = useState(
+    "Record your voice to get started"
+  );
   const [processingMessageIndex, setProcessingMessageIndex] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -195,9 +212,13 @@ export default function HomePage() {
     setSelectedFile(file);
     setDeclaredDuration(duration);
     setError(null);
-    setStatusMessage(`🎉 Captured ${Math.min(duration, MAX_AUDIO_SECONDS)}s of audio! Check the box below and let's make magic happen.`);
+    setStatusMessage(
+      `🎉 Captured ${Math.min(
+        duration,
+        MAX_AUDIO_SECONDS
+      )}s of audio! Check the box below and let's make magic happen.`
+    );
   }, []);
-
 
   useEffect(() => {
     if (!job?.id) return;
@@ -206,7 +227,9 @@ export default function HomePage() {
     }
     const interval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/status/${job.id}`, { cache: "no-store" });
+        const response = await fetch(`/api/status/${job.id}`, {
+          cache: "no-store",
+        });
         if (!response.ok) return;
         const payload = await response.json();
         if (!payload?.data) return;
@@ -222,7 +245,9 @@ export default function HomePage() {
     if (!job) return;
     if (job.status === "processing") {
       const interval = setInterval(() => {
-        setProcessingMessageIndex((prev) => (prev + 1) % PROCESSING_MESSAGES.length);
+        setProcessingMessageIndex(
+          (prev) => (prev + 1) % PROCESSING_MESSAGES.length
+        );
       }, 3000);
       return () => clearInterval(interval);
     } else {
@@ -297,15 +322,21 @@ export default function HomePage() {
       });
       const result = await response.json();
       if (result.success && result.data) {
-        setJob(prev => prev ? {
-          ...prev,
-          status: result.data.status,
-          output: result.data.renderBlobUrl ? {
-            renderBlobUrl: result.data.renderBlobUrl,
-            publicPlaybackUrl: `/v/${job.id}`
-          } : prev.output,
-          error: result.data.error || null
-        } : null);
+        setJob((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: result.data.status,
+                output: result.data.renderBlobUrl
+                  ? {
+                      renderBlobUrl: result.data.renderBlobUrl,
+                      publicPlaybackUrl: `/v/${job.id}`,
+                    }
+                  : prev.output,
+                error: result.data.error || null,
+              }
+            : null
+        );
       }
     } catch (err) {
       console.error("Sync failed:", err);
@@ -331,21 +362,28 @@ export default function HomePage() {
           Talk as Abhi
         </h1>
         <p className="mx-auto max-w-2xl text-xl text-white/80">
-          Record yourself saying anything and watch me lip-sync it! 100% consensual parody magic ✨
+          Record yourself saying anything and watch me lip-sync it! 100%
+          consensual parody magic ✨
         </p>
       </header>
 
       <section className="flex flex-col gap-12">
         {/* Prominent Video Section */}
         <div className="w-full">
-
           <div className="grid gap-8 md:grid-cols-2 max-w-6xl mx-auto">
             {/* Original Abhi Video */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white/90 text-center">Original Abhi</h3>
-              <div className="rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 overflow-hidden shadow-2xl" style={{height: "400px"}}>
+              <h3 className="text-lg font-semibold text-white/90 text-center">
+                Original Abhi
+              </h3>
+              <div
+                className="rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 overflow-hidden shadow-2xl"
+                style={{ height: "400px" }}
+              >
                 <video
                   controls
+                  autoPlay
+                  controlsList="nodownload"
                   muted
                   preload="metadata"
                   className="w-full h-full object-cover"
@@ -361,8 +399,13 @@ export default function HomePage() {
 
             {/* Generated Video */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white/90 text-center">Your Creation</h3>
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 border border-emerald-400/20 overflow-hidden shadow-2xl" style={{height: "400px"}}>
+              <h3 className="text-lg font-semibold text-white/90 text-center">
+                Your Creation
+              </h3>
+              <div
+                className="rounded-2xl bg-gradient-to-br from-emerald-800/30 to-blue-800/30 border border-emerald-400/20 overflow-hidden shadow-2xl"
+                style={{ height: "400px" }}
+              >
                 {job?.status === "completed" && job.output?.renderBlobUrl ? (
                   <video
                     controls
@@ -372,7 +415,9 @@ export default function HomePage() {
                 ) : job?.status === "processing" ? (
                   <div className="text-center text-emerald-300 animate-pulse h-full flex flex-col items-center justify-center">
                     <div className="text-6xl mb-4">⚡</div>
-                    <p className="text-lg font-medium">{PROCESSING_MESSAGES[processingMessageIndex]}</p>
+                    <p className="text-lg font-medium">
+                      {PROCESSING_MESSAGES[processingMessageIndex]}
+                    </p>
                     <button
                       onClick={handleSync}
                       disabled={isSyncing}
@@ -385,13 +430,17 @@ export default function HomePage() {
                   <div className="text-center text-red-300 h-full flex flex-col items-center justify-center">
                     <div className="text-6xl mb-4">❌</div>
                     <p className="text-lg font-medium">Something went wrong</p>
-                    <p className="text-sm text-red-400 mt-2">{job.error || "Processing failed"}</p>
+                    <p className="text-sm text-red-400 mt-2">
+                      {job.error || "Processing failed"}
+                    </p>
                   </div>
                 ) : (
                   <div className="text-center text-white/60 h-full flex flex-col items-center justify-center">
                     <div className="text-6xl mb-4">🎬</div>
                     <p className="text-lg">Your video will appear here</p>
-                    <p className="text-sm text-white/40 mt-2">Record your voice below to get started</p>
+                    <p className="text-sm text-white/40 mt-2">
+                      Record your voice below to get started
+                    </p>
                   </div>
                 )}
               </div>
@@ -401,20 +450,24 @@ export default function HomePage() {
           {/* Completion Actions */}
           {job?.status === "completed" && job.output?.renderBlobUrl && (
             <div className="mt-8 text-center space-y-6 max-w-4xl mx-auto">
-              <h3 className="text-2xl font-bold text-emerald-300">🎉 Your Abhi clip is ready!</h3>
+              <h3 className="text-2xl font-bold text-emerald-300">
+                🎉 Your Abhi clip is ready!
+              </h3>
               <div className="flex flex-wrap justify-center gap-4">
                 <button
                   type="button"
                   className="rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-6 py-3 text-sm font-medium text-white transition-all transform hover:scale-105"
                   onClick={() => {
-                    navigator.clipboard.writeText(job.output!.publicPlaybackUrl!);
+                    navigator.clipboard.writeText(
+                      job.output!.publicPlaybackUrl!
+                    );
                   }}
                 >
                   📋 Copy Link
                 </button>
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    "I just made Abhi say my words using AI! 🤖✨ Try it yourself at TalkAsAbhi.com",
+                    "I just made Abhi say my words using AI! 🤖✨ Try it yourself at TalkAsAbhi.com"
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -424,7 +477,7 @@ export default function HomePage() {
                 </a>
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                    `Check out this AI magic: ${job.output.publicPlaybackUrl}`,
+                    `Check out this AI magic: ${job.output.publicPlaybackUrl}`
                   )}`}
                   target="_blank"
                   rel="noreferrer"
@@ -433,7 +486,9 @@ export default function HomePage() {
                   💬 Send on WhatsApp
                 </a>
               </div>
-              <p className="text-sm text-white/50">⏰ Clips auto-delete in 72 hours for privacy</p>
+              <p className="text-sm text-white/50">
+                ⏰ Clips auto-delete in 72 hours for privacy
+              </p>
             </div>
           )}
         </div>
@@ -452,7 +507,8 @@ export default function HomePage() {
                   className="mt-1 h-5 w-5 rounded border-emerald-400/50 bg-transparent accent-emerald-400"
                 />
                 <span className="text-sm font-medium">
-                  ✅ I understand this is parody and I&apos;ll keep it respectful
+                  ✅ I understand this is parody and I&apos;ll keep it
+                  respectful
                 </span>
               </label>
 
@@ -462,10 +518,12 @@ export default function HomePage() {
                 disabled={!canSubmit}
                 className={classNames(
                   "w-full max-w-md mx-auto block rounded-2xl bg-gradient-to-r from-emerald-500 to-blue-500 px-8 py-4 text-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg",
-                  !canSubmit && "cursor-not-allowed opacity-50 transform-none",
+                  !canSubmit && "cursor-not-allowed opacity-50 transform-none"
                 )}
               >
-                {isSubmitting ? "🚀 Creating Magic..." : "🎬 Generate My Abhi Clip!"}
+                {isSubmitting
+                  ? "🚀 Creating Magic..."
+                  : "🎬 Generate My Abhi Clip!"}
               </button>
             </div>
           )}
@@ -478,7 +536,9 @@ export default function HomePage() {
 
           {statusMessage && !error && (
             <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4 mt-6 max-w-md mx-auto">
-              <p className={classNames("font-medium text-center", statusTone)}>{statusMessage}</p>
+              <p className={classNames("font-medium text-center", statusTone)}>
+                {statusMessage}
+              </p>
             </div>
           )}
         </div>
@@ -487,23 +547,33 @@ export default function HomePage() {
         {(job?.status === "processing" || hasRecording) && (
           <div className="max-w-4xl mx-auto w-full">
             <div className="rounded-3xl border border-blue-400/20 bg-blue-400/5 p-8 backdrop-blur">
-              <h2 className="text-2xl font-bold text-white mb-6 text-center">✨ How the Magic Works</h2>
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">
+                ✨ How the Magic Works
+              </h2>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <div className="text-center space-y-3">
                   <span className="text-emerald-400 text-4xl block">🎤</span>
-                  <p className="text-sm text-white/80">We capture your voice and clean it up for AI processing</p>
+                  <p className="text-sm text-white/80">
+                    We capture your voice and clean it up for AI processing
+                  </p>
                 </div>
                 <div className="text-center space-y-3">
                   <span className="text-blue-400 text-4xl block">🤖</span>
-                  <p className="text-sm text-white/80">Replicate&apos;s AI analyzes your speech patterns</p>
+                  <p className="text-sm text-white/80">
+                    Replicate&apos;s AI analyzes your speech patterns
+                  </p>
                 </div>
                 <div className="text-center space-y-3">
                   <span className="text-purple-400 text-4xl block">🎭</span>
-                  <p className="text-sm text-white/80">The AI maps your words to Abhi&apos;s facial movements</p>
+                  <p className="text-sm text-white/80">
+                    The AI maps your words to Abhi&apos;s facial movements
+                  </p>
                 </div>
                 <div className="text-center space-y-3">
                   <span className="text-yellow-400 text-4xl block">🎬</span>
-                  <p className="text-sm text-white/80">Final video gets a watermark and is ready to share!</p>
+                  <p className="text-sm text-white/80">
+                    Final video gets a watermark and is ready to share!
+                  </p>
                 </div>
               </div>
             </div>
@@ -514,7 +584,8 @@ export default function HomePage() {
       <footer className="mt-12 border-t border-white/10 pt-8 pb-4">
         <div className="text-center space-y-3">
           <p className="text-sm text-white/60">
-            © {new Date().getFullYear()} Talk as Abhi • Built with ❤️ for consensual AI fun
+            © {new Date().getFullYear()} Talk as Abhi • Built with ❤️ for
+            consensual AI fun
           </p>
           <div className="flex justify-center gap-6 text-xs">
             <a
