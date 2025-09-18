@@ -358,12 +358,11 @@ export default function HomePage() {
         <div className="mx-auto inline-flex w-fit rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm font-bold uppercase tracking-widest text-emerald-300">
           🎭 Consensual AI Fun
         </div>
-        <h1 className="text-balance text-5xl font-bold text-white sm:text-6xl">
+        <h1 className="text-balance text-5xl font-bold text-white">
           Talk as Abhi
         </h1>
         <p className="mx-auto max-w-2xl text-xl text-white/80">
-          Record yourself saying anything and watch me lip-sync it! 100%
-          consensual parody magic ✨
+          Record yourself saying anything and watch me lip-sync it!
         </p>
       </header>
 
