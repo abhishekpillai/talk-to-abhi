@@ -204,9 +204,18 @@ export default function HomePage() {
   );
   const [processingMessageIndex, setProcessingMessageIndex] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLocalDev, setIsLocalDev] = useState(false);
+  const [jobStartTime, setJobStartTime] = useState<number | null>(null);
 
   const canSubmit = consent && !!selectedFile && !isSubmitting;
   const hasRecording = !!selectedFile;
+
+  // Detect local development environment
+  useEffect(() => {
+    setIsLocalDev(
+      typeof window !== "undefined" && window.location.hostname === "localhost"
+    );
+  }, []);
 
   const handleRecorderAudio = useCallback((file: File, duration: number) => {
     setSelectedFile(file);
@@ -244,6 +253,9 @@ export default function HomePage() {
   useEffect(() => {
     if (!job) return;
     if (job.status === "processing") {
+      // Set initial processing message
+      setStatusMessage(PROCESSING_MESSAGES[processingMessageIndex]);
+      // Set up interval to cycle through messages
       const interval = setInterval(() => {
         setProcessingMessageIndex(
           (prev) => (prev + 1) % PROCESSING_MESSAGES.length
@@ -256,8 +268,9 @@ export default function HomePage() {
         setError(job.error);
       }
     }
-  }, [job]);
+  }, [job, processingMessageIndex]);
 
+  // Update status message when processing message index changes
   useEffect(() => {
     if (job?.status === "processing") {
       setStatusMessage(PROCESSING_MESSAGES[processingMessageIndex]);
@@ -305,6 +318,7 @@ export default function HomePage() {
         id: jobId,
         status: startJson.data.status,
       } as StatusPayload);
+      setJobStartTime(Date.now());
       setStatusMessage("Processing — Abhi is lip-syncing your track");
     } catch (err) {
       setError((err as Error).message);
@@ -345,6 +359,17 @@ export default function HomePage() {
     }
   }, [job?.id, isSyncing]);
 
+  // Automatic fallback sync for production after 30 seconds
+  useEffect(() => {
+    if (!job?.id || job.status !== "processing" || isLocalDev || !jobStartTime) return;
+
+    const timeout = setTimeout(() => {
+      handleSync();
+    }, 30000); // 30 seconds
+
+    return () => clearTimeout(timeout);
+  }, [job?.id, job?.status, isLocalDev, jobStartTime, handleSync]);
+
   const statusTone = useMemo(() => {
     if (!job) return "text-white/80";
     if (job.status === "failed") return "text-red-400";
@@ -383,7 +408,6 @@ export default function HomePage() {
                   controls
                   autoPlay
                   controlsList="nodownload"
-                  muted
                   preload="metadata"
                   className="w-full h-full object-cover"
                   src="https://y2gvxtii819fey1g.public.blob.vercel-storage.com/templates/abhi-v1.mp4"
@@ -408,6 +432,8 @@ export default function HomePage() {
                 {job?.status === "completed" && job.output?.renderBlobUrl ? (
                   <video
                     controls
+                    autoPlay
+                    controlsList="nodownload"
                     className="w-full h-full object-cover"
                     src={job.output.renderBlobUrl}
                   />
@@ -417,13 +443,15 @@ export default function HomePage() {
                     <p className="text-lg font-medium">
                       {PROCESSING_MESSAGES[processingMessageIndex]}
                     </p>
-                    <button
-                      onClick={handleSync}
-                      disabled={isSyncing}
-                      className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm rounded-lg transition-all"
-                    >
-                      {isSyncing ? "Syncing..." : "Check Status"}
-                    </button>
+                    {isLocalDev && (
+                      <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-sm rounded-lg transition-all"
+                      >
+                        {isSyncing ? "Syncing..." : "Check Status"}
+                      </button>
+                    )}
                   </div>
                 ) : job?.status === "failed" ? (
                   <div className="text-center text-red-300 h-full flex flex-col items-center justify-center">
